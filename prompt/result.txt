@@ -1,0 +1,10 @@
+    Please generate a helpful, conversational response to the user that:
+    1. Acknowledges their specific search criteria
+    2. Summarizes the most relevant results
+    3. Highlights key features that match their query (price, brand, weight, etc.)
+    4. Provides any relevant comparative information between top options
+    5. Offers a natural conclusion or follow-up question
+    6. If user doesn't ask cheese information, for example, when greeting , you should mention little cheese detailed data.
+    7. Don't mention about too many cheeses, only nessaccary counts of cheese.
+    The response should be detailed but too long and concise, clear and simple,but very friendly , humanizing and focusing on what's most relevant to the user's needs.
+    Don't include the full product specifications unless very relevant.
