@@ -17,7 +17,6 @@ index = pc.Index(index_name)
 
 
 def generate_search_query(user_input: str):
-    """Transform user input into a structured search query using GPT-4o"""
     with open("../prompt/system.txt",'r') as f:
         search_prompt =  f.read()
     prompt = f"""
@@ -36,35 +35,27 @@ def generate_search_query(user_input: str):
     
     return response.choices[0].message.content
 def perform_hybrid_search(search_params):
-    """Execute hybrid search in Pinecone combining vector search with metadata filtering"""
     search_params=json.loads(search_params)
-    # Extract search components
-    # print(search_params)
+
     vector_query = search_params.get("vector_query", "")
     metadata_filters = search_params.get("metadata_filters", {})
     top_k = search_params.get("top_k", 10)
 
-    # print(metadata_filters)
-    
-    # Generate embedding for vector search
     dense_query_embedding = pc.inference.embed(
         model="llama-text-embed-v2",
         inputs=vector_query,
         parameters={"input_type": "query", "truncate": "END"}
     )
 
-    # Convert the query into a sparse vector
     sparse_query_embedding = pc.inference.embed(
         model="pinecone-sparse-english-v0",
         inputs=vector_query,
         parameters={"input_type": "query", "truncate": "END"}
     )
 
-    # Construct metadata filter
     filter_dict = {}
     for key, value in metadata_filters.items():
         if isinstance(value, dict) and ("min" in value or "max" in value):
-            # Handle range filters
             range_filter = {}
             if "min" in value:
                 range_filter["$gte"] = value["min"]
@@ -72,9 +63,7 @@ def perform_hybrid_search(search_params):
                 range_filter["$lte"] = value["max"]
             filter_dict[key] = range_filter
         else:
-            # Handle exact match filters
             filter_dict[key] = value
-    # print(filter_dict)
     query_response = index.query(
         namespace="hybrid-namespace",
         top_k=top_k,
@@ -84,7 +73,7 @@ def perform_hybrid_search(search_params):
         # filter=filter_dict,
         include_metadata=True
     )
-    # print(query_response)
+
     
     return query_response.matches
 
@@ -94,9 +83,8 @@ def perform_hybrid_search(search_params):
 def generate_response(user_query, search_results, search_params):
     """Generate a natural language response to the user's query based on search results"""
     
-    # Prepare search results summary for GPT-4o
     results_summary = []
-    for i, product in enumerate(search_results[:5]):  # Limit to top 5 for prompt size
+    for i, product in enumerate(search_results[:5]):
         result = {
             "name": product.metadata.get("product_name", "Unnamed product"),
             "brand": product.metadata.get("brand", "Unknown brand"),
@@ -133,7 +121,6 @@ def generate_response(user_query, search_results, search_params):
     with open("../prompt/additional.txt",'r') as f:
         additional_data =  f.read()
         
-    # Create a prompt for GPT-4o to generate a response
     prompt = f"""
     Additional Data : "{additional_data}"
     
@@ -171,20 +158,16 @@ def generate_response(user_query, search_results, search_params):
 def product_search_bot(user_query):
     """Main bot handler that processes user queries and returns product results with a natural language response"""
     
-    # Generate structured search query
     search_params = generate_search_query(user_query)
-    
-    # Perform hybrid search
+
     search_results = perform_hybrid_search(search_params)
     
-    # Format results for internal use
     formatted_results = []
     for item in search_results:
         product = item.metadata
         product["score"] = item.score
         formatted_results.append(product)
     
-    # Generate natural language response
     response_text = generate_response(user_query, search_results, search_params)
     
     return {
@@ -198,10 +181,8 @@ def product_search_bot(user_query):
 while True:
     user_message = input("question:  ")
 
-    # Process the query and generate response
     bot_response = product_search_bot(user_message)
 
-    # Display the response to the user
     if bot_response["success"]:
         print(bot_response["response"])
     else:

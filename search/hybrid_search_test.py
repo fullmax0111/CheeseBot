@@ -6,13 +6,11 @@ from pinecone import Pinecone
 import openai
 import json
 
-# Load environment variables. This happens once when the module is imported.
 load_dotenv()
 
 PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
-# Global variables for clients, to be initialized
 pc = None
 index = None
 _clients_initialized = False
@@ -34,7 +32,7 @@ def initialize_clients():
     try:
         openai.api_key = OPENAI_API_KEY
         pc = Pinecone(api_key=PINECONE_API_KEY)
-        index_name = "cheese-chatbot"  # Ensure this index exists
+        index_name = "cheese-chatbot" 
         index = pc.Index(index_name)
         _clients_initialized = True
         print("INFO: OpenAI and Pinecone clients initialized successfully.")
@@ -45,13 +43,9 @@ def initialize_clients():
         return False
 
 def _get_prompt_path(filename):
-    # Assumes 'prompt' directory is one level up from this script's directory.
-    # E.g., if hybrid_search.py is in 'src/', prompts are in 'project_root/prompt/'
-    # If hybrid_search.py is in project_root, and prompt/ is a subdir, change to "prompt/" + filename
     base_dir = os.path.dirname(os.path.abspath(__file__))
     prompt_path = os.path.join(base_dir, "..", "prompt", filename)
     if not os.path.exists(prompt_path):
-        # Fallback: Try if 'prompt' is a subdirectory of where this script is
         prompt_path_alt = os.path.join(base_dir, "prompt", filename)
         if os.path.exists(prompt_path_alt):
             return prompt_path_alt
@@ -70,7 +64,7 @@ def generate_search_query(user_input: str):
             search_prompt = f.read()
     except FileNotFoundError as e:
         print(f"ERROR: {e}")
-        return None # Or raise
+        return None
 
     prompt = f"""
     Based on this user query: "{user_input}"
@@ -90,33 +84,26 @@ def generate_search_query(user_input: str):
 def perform_hybrid_search(search_params):
     """Execute hybrid search in Pinecone combining vector search with metadata filtering"""
     search_params=json.loads(search_params)
-    # Extract search components
-    # print(search_params)
+
     vector_query = search_params.get("vector_query", "")
     metadata_filters = search_params.get("metadata_filters", {})
     top_k = search_params.get("top_k", 5)
 
-    # print(metadata_filters)
-    
-    # Generate embedding for vector search
     dense_query_embedding = pc.inference.embed(
         model="llama-text-embed-v2",
         inputs=vector_query,
         parameters={"input_type": "query", "truncate": "END"}
     )
 
-    # Convert the query into a sparse vector
     sparse_query_embedding = pc.inference.embed(
         model="pinecone-sparse-english-v0",
         inputs=vector_query,
         parameters={"input_type": "query", "truncate": "END"}
     )
 
-    # Construct metadata filter
     filter_dict = {}
     for key, value in metadata_filters.items():
         if isinstance(value, dict) and ("min" in value or "max" in value):
-            # Handle range filters
             range_filter = {}
             if "min" in value:
                 range_filter["$gte"] = value["min"]
@@ -124,7 +111,6 @@ def perform_hybrid_search(search_params):
                 range_filter["$lte"] = value["max"]
             filter_dict[key] = range_filter
         else:
-            # Handle exact match filters
             filter_dict[key] = value
     print(filter_dict)
     query_response = index.query(
@@ -141,14 +127,10 @@ def perform_hybrid_search(search_params):
         },
         include_metadata=True
     )
-    # print(query_response)
     
     return query_response.matches
 
 def generate_response(user_query, search_results, search_params, history):
-    """Generate a natural language response to the user's query based on search results"""
-    
-    # Prepare search results summary for GPT-4o
     results_summary = []
     for i, product in enumerate(search_results[:5]):  # Limit to top 5 for prompt size
         result = {
@@ -187,7 +169,6 @@ def generate_response(user_query, search_results, search_params, history):
     with open(_get_prompt_path("additional.txt"), 'r') as f:
         additional_data =  f.read()
         
-    # Create a prompt for GPT-4o to generate a response
     prompt = f"""
     Additional Data : "{additional_data}"
     
@@ -232,7 +213,6 @@ def generate_response(user_query, search_results, search_params, history):
 def product_search_bot(user_query: str, history: str):
     """Main bot handler. Returns a dictionary with response and results."""
     if not _clients_initialized:
-        # Attempt to initialize if not already
         if not initialize_clients():
             return {
                 "success": False,
@@ -242,17 +222,14 @@ def product_search_bot(user_query: str, history: str):
     
     search_params = generate_search_query(user_query)
     
-    # Perform hybrid search
     search_results = perform_hybrid_search(search_params)
     
-    # Format results for internal use
     formatted_results = []
     for item in search_results:
         product = item.metadata
         product["score"] = item.score
         formatted_results.append(product)
     
-    # Generate natural language response
     response_text = generate_response(user_query, search_results, search_params, history)
     
     return {
@@ -263,7 +240,6 @@ def product_search_bot(user_query: str, history: str):
         "result_count": len(formatted_results)
     }
 
-# Example of how to test this module directly (optional)
 if __name__ == "__main__":
     print("Attempting to initialize clients for direct module test...")
     if initialize_clients():
@@ -275,5 +251,3 @@ if __name__ == "__main__":
         print(response_2['response'])
     else:
         print("\nClient initialization failed. Cannot run tests.")
-
-# --- END OF FILE hybrid_search.py ---

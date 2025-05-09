@@ -8,12 +8,9 @@ from pinecone import ServerlessSpec
 
 load_dotenv()
 
-# --- Configuration ---
-# Access environment variables loaded from .env
 PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
-# DIMENSION is not needed for sparse vectors when creating the index
-UPSERT_BATCH_SIZE = 50 # Adjust as needed
 
+UPSERT_BATCH_SIZE = 50
 
 pc = Pinecone(api_key=PINECONE_API_KEY)
 
@@ -34,7 +31,7 @@ if not pc.has_index(index_name):
             region="us-east-1"
         )
     )
-# --- 1. Load Cheese Data ---
+
 def load_cheese_data(filepath="../scraper/kimelo_cheese_detailed_data_all_pages.json"):
     """Loads cheese data from a JSON file."""
     try:
@@ -49,41 +46,30 @@ def load_cheese_data(filepath="../scraper/kimelo_cheese_detailed_data_all_pages.
         print(f"Error: Could not decode JSON from {filepath}")
         return []
 
-# --- 2. Create EVEN MORE DETAILED Semantic Text Chunk ---
 def create_even_more_detailed_semantic_text_chunk(item: dict) -> str:
-    """
-    Creates an even more detailed and lengthy semantic text chunk from a cheese data item,
-    aiming to maximize meaningful textual content for embedding.
-    """
-    
-    # --- Core Identifiers & Descriptions ---
     name = item.get('product_name_detail', item.get('product_name', ''))
     brand = item.get('brand_supplier_detail', item.get('brand', ''))
     
-    # --- Categories ---
     categories_list = []
     categories_str_raw = item.get('categories', '')
     if categories_str_raw:
         categories_list = [cat.strip() for cat in categories_str_raw.split('/')]
 
-    # --- Physical & Packaging Attributes ---
     quantity_package_info = item.get('quantity_package_info', '')
     weight = item.get('weight', '')
     dimensions = item.get('dimensions', '')
 
-    # --- Price & Status ---
     price = item.get('price', '')
     unit_price = item.get('unit_price', '')
     status = item.get('status', '')
 
-    # --- Image Alt Texts (Main and Thumbnails) ---
     all_alt_texts = set() 
     main_alt = item.get('detail_page_main_image_alt', '')
     if main_alt:
         all_alt_texts.add(main_alt.strip())
     
     thumbnail_images = item.get('detail_page_thumbnail_images', [])
-    if isinstance(thumbnail_images, list): # Ensure it's a list
+    if isinstance(thumbnail_images, list):
         for thumb in thumbnail_images:
             if isinstance(thumb, dict) and thumb.get('alt'):
                 all_alt_texts.add(thumb.get('alt').strip())
@@ -93,10 +79,9 @@ def create_even_more_detailed_semantic_text_chunk(item: dict) -> str:
     
     for alt in all_alt_texts:
         temp_alt = alt
-        # Remove SKU suffix from alt text if present
+
         if sku_for_cleaning and temp_alt.endswith(f"- {sku_for_cleaning}"):
             temp_alt = temp_alt.replace(f"- {sku_for_cleaning}", "").strip()
-        # Avoid adding if it's just a repeat of the main product name
         if name and temp_alt.lower() == name.lower():
             continue
         if temp_alt: 
@@ -104,38 +89,30 @@ def create_even_more_detailed_semantic_text_chunk(item: dict) -> str:
     
     meaningful_alt_text_summary = ""
     if cleaned_alt_texts:
-        # Join unique, cleaned alt texts. Prioritize variety.
-        # Take up to 3 distinct alt texts to avoid making this section too long.
         alt_list_for_summary = list(cleaned_alt_texts)
-        if len(alt_list_for_summary) > 3: # Limit the number of alt texts in summary
+        if len(alt_list_for_summary) > 3:
             alt_list_for_summary = alt_list_for_summary[:3] 
         meaningful_alt_text_summary = "Visual descriptions and alternative views suggest: " + "; ".join(alt_list_for_summary) + "."
 
-    # --- Additional Information from specific fields ---
     table_caption = item.get('table_caption', '')
-    # Standard caption text to potentially filter out or rephrase
     standard_caption = "Product information or packaging displayed may not be current or complete. *Actual weight may vary based on seasonality and other factors."
     
     prop_65_warning = item.get('proposition_65_warning', '')
     standard_prop_65 = "Warning: This product can expose you to chemicals including arsenic, which is known to the State of California to cause cancer. For more information, go to www.P65Warnings.ca.gov"
 
-    # --- Constructing the text chunk ---
     chunk_parts = []
 
-    # 1. Introduction: Product Name and Brand
     if name and brand:
         chunk_parts.append(f"This featured product is '{name}', a quality offering from the distinguished brand {brand}.")
     elif name:
         chunk_parts.append(f"Introducing the product: '{name}'.")
-    elif brand: # Less likely but possible
+    elif brand:
         chunk_parts.append(f"This item is from the brand {brand}.")
 
-    # 2. Categorization and Type Description
     if categories_list:
         category_description = f"It is classified under {categories_str_raw.replace(' / ', ', then ')}."
         chunk_parts.append(category_description)
         
-        # Try to infer more specific type from name and categories
         name_terms = [term.strip().lower() for term in name.replace('(4)','').split(',')] # Remove common package indicators
         type_descriptors = []
         for term in name_terms:
@@ -149,8 +126,6 @@ def create_even_more_detailed_semantic_text_chunk(item: dict) -> str:
         elif "cheese" in categories_list[0].lower():
             chunk_parts.append("This is a cheese product.")
 
-
-    # 3. Physical Characteristics and Packaging Details
     physical_desc_parts = []
     if quantity_package_info:
         physical_desc_parts.append(f"it comes conveniently packaged as {quantity_package_info}")
@@ -162,11 +137,9 @@ def create_even_more_detailed_semantic_text_chunk(item: dict) -> str:
     if physical_desc_parts:
         chunk_parts.append(f"Regarding its physical attributes, {', '.join(physical_desc_parts)}.")
 
-    # 4. Visual Cues from Image Descriptions (Alt Texts)
     if meaningful_alt_text_summary:
         chunk_parts.append(meaningful_alt_text_summary)
 
-    # 5. Purchase Information: Price and Availability
     purchase_info_parts = []
     if price:
         purchase_info_parts.append(f"the current retail price is {price}")
@@ -178,7 +151,6 @@ def create_even_more_detailed_semantic_text_chunk(item: dict) -> str:
     if purchase_info_parts:
         chunk_parts.append(f"For prospective buyers, {', '.join(purchase_info_parts)}.")
 
-    # 6. Important Notes and Disclaimers
     if table_caption and table_caption.strip() != standard_caption.strip():
         chunk_parts.append(f"An important note regarding the product or packaging: \"{table_caption.strip()}\"")
     elif table_caption and table_caption.strip() == standard_caption.strip(): # If it's the standard one, just a generic mention
@@ -189,30 +161,27 @@ def create_even_more_detailed_semantic_text_chunk(item: dict) -> str:
     elif prop_65_warning and prop_65_warning.strip() == standard_prop_65.strip(): # If it's the standard one
         chunk_parts.append("This product is subject to California Proposition 65 chemical exposure warnings.")
 
-    # 7. Extracted Keywords
     keywords = set()
-    if name: # Extract from name (e.g., Cheddar, Shredded, Fancy, Mild)
+    if name:
         for term in name.replace('(4)','').replace('-', ' ').split(','):
             cleaned_term = term.strip().lower()
             if cleaned_term and len(cleaned_term) > 2 and not cleaned_term.isnumeric():
                 keywords.add(cleaned_term)
-    if categories_list: # Extract from categories (e.g., Shredded Cheese)
+    if categories_list:
         for cat_item in categories_list:
-            for term in cat_item.split(','): # Handle if category itself is comma-separated like "Cheese, Shredded"
+            for term in cat_item.split(','):
                 cleaned_term = term.strip().lower()
                 if cleaned_term and len(cleaned_term) > 2:
                     keywords.add(cleaned_term)
     if brand:
         keywords.add(brand.lower())
 
-    # Remove "cheese" if other more specific keywords are present, as it's too generic for this dataset
     if len(keywords) > 1 and "cheese" in keywords:
         keywords.remove("cheese")
     
     if keywords:
         chunk_parts.append(f"Key characteristics and search terms for this item include: {', '.join(sorted(list(keywords)))}.")
 
-    # 8. Context from Related Products (counts)
     related_products_count = len(item.get("related_products", []))
     other_like_products_count = len(item.get("other_like_products", []))
 
@@ -223,24 +192,16 @@ def create_even_more_detailed_semantic_text_chunk(item: dict) -> str:
     elif other_like_products_count > 0:
         chunk_parts.append(f"Explore {other_like_products_count} other similar product options available in our catalog.")
 
-    # --- Final Assembly ---
     final_chunk = " ".join(filter(None, chunk_parts))
-    
-    # Fallback if, despite efforts, the chunk is too short
+
     if not final_chunk.strip() or len(final_chunk.strip().split()) < 20: # Increased min word count for "detailed"
         fallback_parts = [name, brand, categories_str_raw, weight, quantity_package_info, status]
         fallback_text = ". ".join(filter(None, fallback_parts)) + "."
-        # Ensure fallback isn't just "."
         return fallback_text if fallback_text.strip() and fallback_text.strip() != "." else "General cheese product. Further details unavailable."
 
     return final_chunk
 
-# --- 3. Prepare DETAILED Metadata ---
 def prepare_detailed_metadata(item: dict) -> dict:
-    """
-    Prepares comprehensive metadata for Pinecone.
-    Ensures all values are of acceptable types and filters out None/empty strings.
-    """
     if item.get("price")!='N/A':
         price = float(item.get("price")[1:])
     else:
@@ -278,25 +239,22 @@ def prepare_detailed_metadata(item: dict) -> dict:
         "detail_page_main_image_alt": item.get("detail_page_main_image_alt"),
         "related_products_count": len(item.get("related_products", [])),
         "other_like_products_count": len(item.get("other_like_products", [])),
-        # Storing full lists if desired and within Pinecone limits (list of strings).
-        # Be cautious with metadata size limits per vector.
-        "related_products": item.get("related_products", [])[:20], # Example: limit list length
-        "other_like_products": item.get("other_like_products", [])[:20], # Example: limit list length
+
+        "related_products": item.get("related_products", [])[:20],
+        "other_like_products": item.get("other_like_products", [])[:20],
         "proposition_65_warning": item.get("proposition_65_warning"),
         "table_caption": item.get("table_caption")
     }
-    # Filter out None values and empty strings for cleaner metadata.
+
     return {k: v for k, v in metadata.items() if v is not None and v != ""}
 
-# --- Main Script ---
+
 def main():
 
-    # 1. Load data
     cheese_data_list = load_cheese_data()
     if not cheese_data_list:
         print("No data to process. Exiting.")
         return
-
     try:
         index = pc.Index(index_name)
         print(f"Connected to index '{index_name}'.")
@@ -308,14 +266,11 @@ def main():
     all_text_chunks = []
     
     for i, item in enumerate(tqdm(cheese_data_list, desc="Preparing Items")):
-        # Get a unique ID for the vector
         vector_id = str(item.get('sku') or item.get('product_code_from_url') or f"item_{i}") # Fallback ID
         if not item.get('sku') and not item.get('product_code_from_url'):
             tqdm.write(f"Warning: Item {item.get('product_name', 'Unknown Name')} (index {i}) is missing a reliable ID. Using generated ID: {vector_id}.")
 
-        # Create semantic text chunk
         text_chunk = create_even_more_detailed_semantic_text_chunk(item)
-        # print(text_chunk)
         metadata = prepare_detailed_metadata(item)
         metadata['_id'] = vector_id
 
@@ -329,7 +284,6 @@ def main():
         parameters={"input_type": "passage", "truncate": "END"}
     )
 
-    # Convert the chunk_text into sparse vectors
     sparse_embeddings = pc.inference.embed(
         model="pinecone-sparse-english-v0",
         inputs=[d for d in all_text_chunks],
@@ -340,7 +294,6 @@ def main():
 
     index = pc.Index(index_name)
 
-    # Each record contains an ID, a dense vector, a sparse vector, and the original text as metadata
     records = []
     for d, de, se in zip(all_metadata, dense_embeddings, sparse_embeddings):
         records.append({
@@ -352,12 +305,10 @@ def main():
 
     print("Upserting...")
 
-    # Upsert the records into the hybrid index
     index.upsert(
         vectors=records,
         namespace="hybrid-namespace"
     )
-
         
     print(f"\n--- Indexing Complete ---")
     print(f"Final index stats: {index.describe_index_stats()}")
