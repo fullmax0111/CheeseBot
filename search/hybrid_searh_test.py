@@ -126,14 +126,14 @@ def perform_hybrid_search(search_params):
         else:
             # Handle exact match filters
             filter_dict[key] = value
-    # print(filter_dict)
+    print(filter_dict)
     query_response = index.query(
         namespace="hybrid-namespace",
         top_k=top_k,
         vector=dense_query_embedding.data[0]['values'],
         sparse_vector={'indices': sparse_query_embedding.data[0]['sparse_indices'], 'values': sparse_query_embedding.data[0]['sparse_values']},
         include_values=False,
-        # filter=filter_dict,
+        filter=filter_dict,
         rerank={
             "model": "bge-reranker-v2-m3",
             "top_n": 5,

@@ -1,7 +1,6 @@
     Extract relevant search parameters for a product database with these fields:
     - price (range or specific value)
     - dimensions (measurements)
-    - categories (product types)
     - brand (manufacturer name)
     - unit_price (price per unit)
     - weight (product weight)

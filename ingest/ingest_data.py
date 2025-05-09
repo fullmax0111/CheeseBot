@@ -241,6 +241,21 @@ def prepare_detailed_metadata(item: dict) -> dict:
     Prepares comprehensive metadata for Pinecone.
     Ensures all values are of acceptable types and filters out None/empty strings.
     """
+    if item.get("price")!='N/A':
+        price = float(item.get("price")[1:])
+    else:
+        price = None
+    if item.get("unit_price")!='N/A':
+        if(item.get("unit_price")[-1]=='f'):
+            unit_price = float(item.get("unit_price")[1:-5])
+        else:
+            unit_price = float(item.get("unit_price")[1:-3])
+    else:
+        unit_price = None
+    if item.get("weight")!='N/A':
+        weight = float(item.get("weight")[:-3])
+    else:
+        weight = None
     metadata = {
         "product_detail_url": item.get("product_detail_url"),
         "image_url": item.get("image_url"),
@@ -249,8 +264,8 @@ def prepare_detailed_metadata(item: dict) -> dict:
         "product_name_detail": item.get("product_name_detail"),
         "brand": item.get("brand"),
         "brand_supplier_detail": item.get("brand_supplier_detail"),
-        "price": item.get("price"),
-        "unit_price": item.get("unit_price"),
+        "price": price,
+        "unit_price": unit_price,
         "status": item.get("status"),
         "categories": item.get("categories"),
         "sku": str(item.get("sku")) if item.get("sku") else None,
@@ -259,7 +274,7 @@ def prepare_detailed_metadata(item: dict) -> dict:
         "item_number_from_name": item.get("item_number_from_name"),
         "quantity_package_info": item.get("quantity_package_info"),
         "dimensions": item.get("dimensions"),
-        "weight": item.get("weight"),
+        "weight": weight,
         "detail_page_main_image_alt": item.get("detail_page_main_image_alt"),
         "related_products_count": len(item.get("related_products", [])),
         "other_like_products_count": len(item.get("other_like_products", [])),
