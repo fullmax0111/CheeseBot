@@ -20,3 +20,66 @@ The most cheap cheese is "Cheese, Smoked Cheddar, Mild, 2/5 Lb"
 This cheese price is $3.21 but very delicious.
 
 There are 15 different kinds of product in total.
+
+Here are the 10 most expensive cheese products we offer, listed by price:
+1. Cheese, Halloumi, Tradition, Greek, Import, 40/8.8 Oz 124144
+Category: Sliced Cheese
+Price: $197.35
+Price per pound: $8.97/lb
+Brand: Alambra
+Halloumi Cheese
+2. Cheese, Kefalotyri, Hard, Wheel, Greek, Import, 18 Lb Avg 124125
+Category: Sliced Cheese
+Price: $156.06
+Price per pound: $8.67/lb
+Brand: Metsobo A.e.
+Kefalotyri Cheese
+3. Cheese, Manouri, Log, Greek, Imported, 4/5 Lb 125736
+Category: Sliced Cheese
+Price: $139.32
+Price per pound: $6.97/lb
+Brand: Krinos
+Manouri Cheese
+4. Cheese, Mozzarella, Pslm, Cali Gold, Loaf, Fzn, 8/6 Lb 112075
+Category: Cheese Loaf
+Price: $124.51
+Price per pound: $2.59/lb
+Brand: California Gold
+Mozzarella Cheese
+5. Cheese, Monterey Jack, Block, 40 Lb Avg - 103562
+Category: Sliced Cheese
+Price: $112.0
+Price per pound: $2.8/lb
+Brand: Packer
+Monterey Jack Cheese
+6. Cheese, Parmesan, Wheel, Usa, 20 Lb Avg - 112306
+Category: Cheese Wheel
+Price: $111.67
+Price per pound: $5.58/lb
+Brand: Galbani
+Parmesan Cheese
+7. Cheese, Swiss, Block
+Category: Sliced Cheese
+Price: $108.9
+Price per pound: $3.3/lb
+Brand: Ammerlander
+Swiss Cheese
+8. Cheese, Mozzarella, Lmwm, Cali Gold, Loaf, 8/6 Lb 125724
+Category: Cheese Loaf
+Price: $104.08
+Price per pound: $2.17/lb
+Brand: California Gold
+Mozzarella Cheese
+9. Cheese, Blend, Mozz, Wm & Ps, Premio Shred, 6/5 Lb - 112492
+Category: Shredded Cheese
+Price: $101.51
+Price per pound: $3.38/lb
+Brand: Galbani Premio
+Mozzarella Blend Cheese
+10. Cheese, Mozzarella, Wmlm, Loaf, Professionale, 8/5 Lb 125731
+Category: Cheese Loaf
+Price: $98.2
+Price per pound: $2.46/lb
+Brand: Galbani
+Mozzarella Cheese
+These products represent some of the finest selections we have, each with unique qualities and flavors. If you'd like more details or have questions about any cheese, feel free to ask!
