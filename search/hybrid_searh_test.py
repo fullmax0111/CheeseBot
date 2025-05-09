@@ -126,7 +126,7 @@ def perform_hybrid_search(search_params):
         else:
             # Handle exact match filters
             filter_dict[key] = value
-    # print(filter_dict)
+    print(filter_dict)
     query_response = index.query(
         namespace="hybrid-namespace",
         top_k=top_k,
