@@ -1,27 +1,23 @@
-# --- START OF FILE app.py ---
-
 import streamlit as st
-import re # For regex
+import re
 import os 
-import json # For displaying full results and for escaping text for JS
-import streamlit.components.v1 as components # For custom HTML components
+import json
+import streamlit.components.v1 as components
 import requests
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
 load_dotenv()
 
-# --- Constants ---
 MAX_IMAGES_PER_ROW = 4
 IMAGE_WIDTH_PX = 200
 IMAGE_HEIGHT_PX = 200
 SEARCH_MODULE_PATH = "search.hybrid_search_test" 
 ROLE_PROMPT_FILE = "./prompt/role.txt" 
 
-# Add SerpAPI configuration constant with the rest of your constants
-SERPAPI_API_KEY = os.getenv('SERPAPI_API_KEY', '')  # Get API key from .env file
 
-# --- Session State Initializations ---
+SERPAPI_API_KEY = os.getenv('SERPAPI_API_KEY', '')
+
+
 if "chat_log" not in st.session_state:
     st.session_state.chat_log = [] 
 if "clients_initialized_successfully" not in st.session_state:
@@ -29,7 +25,7 @@ if "clients_initialized_successfully" not in st.session_state:
 if "context_data" not in st.session_state:
     st.session_state.context_data = []
 
-# --- Import Custom Search Logic ---
+
 try:
     from importlib import import_module
     search_module = import_module(SEARCH_MODULE_PATH)
@@ -45,35 +41,18 @@ except AttributeError as e:
              "Ensure 'product_search_bot' and 'initialize_clients' are defined in the module.")
     st.stop()
 
-# --- Streamlit Page Configuration ---
+
 st.set_page_config(layout="wide", page_title="🧀 Cheese Product Assistant")
 
-# --- Helper Functions ---
+
 def clean_image_links_from_text(text: str) -> str:
-    """Remove any markdown image links from the text."""
-    # Regex to match markdown image links: ![alt text](url)
     image_link_pattern = r'!\[[^\]]*\]\([^)]+\)'
-    # Remove all image links
     cleaned_text = re.sub(image_link_pattern, '', text)
-    # Remove any resulting double spaces or empty lines
     cleaned_text = re.sub(r'\n\s*\n', '\n\n', cleaned_text)
     cleaned_text = re.sub(r'  +', ' ', cleaned_text)
     return cleaned_text.strip()
 
 def web_search(query: str, num_results: int = 5, engine: str = "google", tb: str = "", tbs: str = "") -> dict:
-    """
-    Perform a web search using SerpAPI.
-    
-    Args:
-        query: The search query string
-        num_results: Number of results to return (default 5)
-        engine: The search engine to use (default "google")
-        tb: The type of results to return (default "")
-        tbs: The time frame for the search (default "")
-        
-    Returns:
-        Dictionary containing search results or error information
-    """
     if not SERPAPI_API_KEY:
         return {
             "success": False,
@@ -83,7 +62,7 @@ def web_search(query: str, num_results: int = 5, engine: str = "google", tb: str
     try:
         url = "https://serpapi.com/search"
         params = {
-            "q": query,
+            "q": query+" cheese",
             "api_key": SERPAPI_API_KEY,
             "engine": engine,
             "num": num_results,
@@ -92,11 +71,10 @@ def web_search(query: str, num_results: int = 5, engine: str = "google", tb: str
         }
         
         response = requests.get(url, params=params)
-        response.raise_for_status()  # Raise exception for 4XX/5XX responses
+        response.raise_for_status()
         
         results = response.json()
         
-        # Extract organic results
         organic_results = results.get("organic_results", [])
         processed_results = []
         
@@ -129,7 +107,7 @@ def web_search(query: str, num_results: int = 5, engine: str = "google", tb: str
             "error": f"Unexpected error during web search: {str(e)}"
         }
 
-# --- Helper Functions ---
+
 def parse_image_urls_from_bot_response(image_section_text: str) -> list[dict]:
     images = []
     regex_markdown_link = r"\((https?://[^\s)]+)\)"
@@ -154,7 +132,6 @@ def get_image_card_html(image_url: str, caption: str, detail_url: str) -> str:
     """
 
 
-# --- Sidebar ---
 with st.sidebar:
     st.title("🧀 CheeseBot")
     st.markdown("---")
@@ -166,25 +143,25 @@ with st.sidebar:
     st.subheader("Web Search")
     web_search_query = st.text_input("Search the web:", placeholder="Enter search query...")
     
-    # Add radio buttons for search options
+
     search_engine = st.radio(
         "Search Engine:",
         options=["Google", "Bing", "Yahoo"],
-        index=0,  # Default to Google
+        index=0,
         horizontal=True
     )
     
     result_type = st.radio(
         "Result Type:",
         options=["Web", "Images", "News", "Videos"],
-        index=0,  # Default to Web
+        index=0,
         horizontal=True
     )
     
     time_frame = st.radio(
         "Time Frame:",
         options=["Any time", "Past day", "Past week", "Past month"],
-        index=0,  # Default to Any time
+        index=0,
         horizontal=True
     )
     
@@ -192,10 +169,8 @@ with st.sidebar:
     
     if search_button and web_search_query:
         with st.spinner(f"Searching {search_engine} for {result_type.lower()}..."):
-            # Map the radio button selections to SerpAPI parameters
             engine_param = search_engine.lower()
             
-            # Set proper engine parameter
             if engine_param == "google":
                 engine = "google"
             elif engine_param == "bing":
@@ -203,19 +178,17 @@ with st.sidebar:
             elif engine_param == "yahoo":
                 engine = "yahoo"
             else:
-                engine = "google"  # Default
+                engine = "google"
             
-            # Set proper type parameter based on result_type
             if result_type.lower() == "images":
-                tb_param = "isch"  # Google Images
+                tb_param = "isch"
             elif result_type.lower() == "news":
-                tb_param = "nws"   # Google News
+                tb_param = "nws"
             elif result_type.lower() == "videos":
-                tb_param = "vid"   # Google Videos
+                tb_param = "vid"
             else:
-                tb_param = ""      # Regular web search
-            
-            # Set time parameter based on time_frame
+                tb_param = ""
+
             if time_frame.lower() == "past day":
                 tbs_param = "qdr:d"
             elif time_frame.lower() == "past week":
@@ -223,9 +196,8 @@ with st.sidebar:
             elif time_frame.lower() == "past month":
                 tbs_param = "qdr:m"
             else:
-                tbs_param = ""     # Any time
+                tbs_param = ""
             
-            # Update the web_search function call with additional parameters
             search_results = web_search(
                 web_search_query, 
                 num_results=5,
@@ -252,16 +224,16 @@ with st.sidebar:
     show_context = st.radio(
         "Show Context Data:",
         options=["Hide", "Show"],
-        index=0,  # Default to Hide
+        index=0,
         horizontal=True
     )
-    # print(st.session_state.context_data)
+
     if show_context == "Show" and st.session_state.context_data:
         st.subheader("Context Data")
         with st.expander("Raw Search Results", expanded=True):
             st.json(st.session_state.context_data)
 
-# --- Main Page ---
+
 main_header_cols = st.columns([0.85, 0.15]) 
 with main_header_cols[0]:
     st.title("🧀 Cheese Product Assistant 🧀")
@@ -269,7 +241,6 @@ with main_header_cols[0]:
 
 st.caption("Ask me about cheese products! I'll do my best to help you find the perfect cheese.")
 
-# --- Initialize Backend Clients ---
 if st.session_state.clients_initialized_successfully is None:
     with st.spinner("🛠️ Initializing backend services... This may take a moment."):
         try:
@@ -282,7 +253,7 @@ if st.session_state.clients_initialized_successfully is None:
             st.session_state.clients_initialized_successfully = False
             st.error(f"🔴 CRITICAL: Exception during backend initialization: {e}")
 
-# --- Display Chat History ---
+
 for entry in st.session_state.chat_log:
     with st.chat_message(entry["role"]):
         if entry["role"] == "user":
@@ -308,7 +279,7 @@ for entry in st.session_state.chat_log:
                                 unsafe_allow_html=True
                             )
 
-# --- Handle User Input and Bot Interaction ---
+
 if user_query := st.chat_input("What kind of cheese are you looking for?"):
     if st.session_state.clients_initialized_successfully is False:
         st.error("🔴 Backend services not initialized. Cannot process query.")
@@ -331,14 +302,13 @@ if user_query := st.chat_input("What kind of cheese are you looking for?"):
             with st.spinner("🧀 Searching for cheeses..."):
                 try:
                     history_context = ""
-                    # The current user_query is st.session_state.chat_log[-1]
-                    # If len > 1, st.session_state.chat_log[-2] is the message before the current user query.
+
                     if len(st.session_state.chat_log) > 1: 
                         history_context = st.session_state.chat_log[-2]["text_response"]
                     
                     bot_data = product_search_bot(user_query, history_context)
                     st.session_state.context_data = bot_data.get("results", "")
-                    # print(st.session_state.context_data)
+
                 except Exception as e:
                     st.error(f"⚠️ Error during product search: {e}")
                     bot_data = {"success": False, "response": "Sorry, an unexpected error occurred while searching."}
@@ -351,25 +321,20 @@ if user_query := st.chat_input("What kind of cheese are you looking for?"):
                 if bot_data and bot_data.get("success"):
                     full_response_text = bot_data.get("response", "")
                     all_search_results_from_bot = bot_data.get("results", [])
-                    
-                    # Split the response by delimiter
+
                     parts = full_response_text.split("******", 1)
-                    
-                    # Get conversational text and clean it of any remaining image links
+
                     conversational_text = clean_image_links_from_text(parts[0].strip())
-                    
-                    # Extract images from the delimiter section if it exists
+
                     if len(parts) > 1:
                         image_list_text_from_bot = parts[1].strip()
                         parsed_image_urls_from_bot = parse_image_urls_from_bot_response(image_list_text_from_bot)
                     else:
-                        # If no delimiter but there might be images in the text, extract them
                         image_link_pattern = r'!\[[^\]]*\]\((https?://[^\s)]+)\)'
                         image_matches = re.findall(image_link_pattern, parts[0])
                         for url in image_matches:
                             parsed_image_urls_from_bot.append({"url": url.strip()})
                 elif bot_data: 
-                    # Clean any image links from error message too
                     conversational_text = clean_image_links_from_text(
                         bot_data.get("response", "An error occurred, or no specific information was found.")
                     )
@@ -412,10 +377,3 @@ if user_query := st.chat_input("What kind of cheese are you looking for?"):
                     "images": images_for_log_and_history, 
                     "full_results": all_search_results_from_bot
                 })
-
-
-
-# --- Add this function after clean_image_links_from_text
-
-
-# --- END OF FILE app.py ---

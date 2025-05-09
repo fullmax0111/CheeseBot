@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 from urllib.parse import urljoin, urlparse, parse_qs, unquote
-import time # For adding a delay between requests
+import time
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 import threading
@@ -15,7 +15,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 
 BASE_APP_URL = "https://shop.kimelo.com/"
-MAX_WORKERS = 5  # Adjust this number based on your system and the website's rate limits
+MAX_WORKERS = 5
 thread_local = threading.local()
 
 def get_actual_image_url(img_tag_src):
@@ -31,7 +31,6 @@ def get_actual_image_url(img_tag_src):
     return urljoin(BASE_APP_URL, img_tag_src)
 
 def get_driver():
-    """Create a new driver instance for each thread"""
     if not hasattr(thread_local, "driver"):
         options = Options()
         options.headless = True
@@ -48,7 +47,7 @@ def scrape_product_detail_page(detail_url, headers):
 
 
     driver.get(detail_url)
-    wait = WebDriverWait(driver, 10)  # 10 seconds timeout
+    wait = WebDriverWait(driver, 10)
     try:
 
         slick_slider = wait.until(
@@ -73,8 +72,6 @@ def scrape_product_detail_page(detail_url, headers):
 
     else:
         print("Slick slider not found in the parsed HTML")
-    
-
     
 
     detail_soup = BeautifulSoup(driver.page_source, 'html.parser')
