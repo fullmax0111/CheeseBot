@@ -133,7 +133,7 @@ def perform_hybrid_search(search_params):
         vector=dense_query_embedding.data[0]['values'],
         sparse_vector={'indices': sparse_query_embedding.data[0]['sparse_indices'], 'values': sparse_query_embedding.data[0]['sparse_values']},
         include_values=False,
-        # filter=filter_dict,
+        filter=filter_dict,
         rerank={
             "model": "bge-reranker-v2-m3",
             "top_n": 5,

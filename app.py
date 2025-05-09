@@ -40,6 +40,19 @@ if "clients_initialized_successfully" not in st.session_state:
 if "show_prompt_modal" not in st.session_state:
     st.session_state.show_prompt_modal = False
 
+# --- Add this function after parse_image_urls_from_bot_response
+def clean_image_links_from_text(text: str) -> str:
+    """Remove any markdown image links from the text."""
+    # Regex to match markdown image links: ![alt text](url)
+    image_link_pattern = r'!\[[^\]]*\]\([^)]+\)'
+    # Remove all image links
+    cleaned_text = re.sub(image_link_pattern, '', text)
+    # Remove any resulting double spaces or empty lines
+    cleaned_text = re.sub(r'\n\s*\n', '\n\n', cleaned_text)
+    cleaned_text = re.sub(r'  +', ' ', cleaned_text)
+    return cleaned_text.strip()
+
+
 # --- Helper Functions ---
 def parse_image_urls_from_bot_response(image_section_text: str) -> list[dict]:
     images = []
@@ -268,13 +281,28 @@ if user_query := st.chat_input("What kind of cheese are you looking for?"):
                 if bot_data and bot_data.get("success"):
                     full_response_text = bot_data.get("response", "")
                     all_search_results_from_bot = bot_data.get("results", [])
+                    
+                    # Split the response by delimiter
                     parts = full_response_text.split("******", 1)
-                    conversational_text = parts[0].strip()
+                    
+                    # Get conversational text and clean it of any remaining image links
+                    conversational_text = clean_image_links_from_text(parts[0].strip())
+                    
+                    # Extract images from the delimiter section if it exists
                     if len(parts) > 1:
                         image_list_text_from_bot = parts[1].strip()
                         parsed_image_urls_from_bot = parse_image_urls_from_bot_response(image_list_text_from_bot)
+                    else:
+                        # If no delimiter but there might be images in the text, extract them
+                        image_link_pattern = r'!\[[^\]]*\]\((https?://[^\s)]+)\)'
+                        image_matches = re.findall(image_link_pattern, parts[0])
+                        for url in image_matches:
+                            parsed_image_urls_from_bot.append({"url": url.strip()})
                 elif bot_data: 
-                    conversational_text = bot_data.get("response", "An error occurred, or no specific information was found.")
+                    # Clean any image links from error message too
+                    conversational_text = clean_image_links_from_text(
+                        bot_data.get("response", "An error occurred, or no specific information was found.")
+                    )
 
                 message_placeholder.markdown(conversational_text)
 
@@ -315,4 +343,5 @@ if user_query := st.chat_input("What kind of cheese are you looking for?"):
                     "full_results": all_search_results_from_bot
                 })
 
-# --- END OF FILE app.py ---
+
+# --- END OF FILE app.py ---    
