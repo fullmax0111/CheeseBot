@@ -113,21 +113,38 @@ def perform_hybrid_search(search_params):
         else:
             filter_dict[key] = value
     print(filter_dict)
-    query_response = index.query(
-        namespace="hybrid-namespace",
-        top_k=top_k,
-        vector=dense_query_embedding.data[0]['values'],
-        sparse_vector={'indices': sparse_query_embedding.data[0]['sparse_indices'], 'values': sparse_query_embedding.data[0]['sparse_values']},
-        include_values=False,
-        filter=filter_dict,
-        rerank={
-            "model": "bge-reranker-v2-m3",
-            "top_n": 5,
-            "rank_fields": ["chunk_text"]
-        },
-        include_metadata=True
-    )
-    
+    try:
+
+        query_response = index.query(
+            namespace="hybrid-namespace",
+            top_k=top_k,
+            vector=dense_query_embedding.data[0]['values'],
+            sparse_vector={'indices': sparse_query_embedding.data[0]['sparse_indices'], 'values': sparse_query_embedding.data[0]['sparse_values']},
+            include_values=False,
+            filter=filter_dict,
+            rerank={
+                "model": "bge-reranker-v2-m3",
+                "top_n": 5,
+                "rank_fields": ["chunk_text"]
+            },
+            include_metadata=True
+        )
+    except Exception as e:
+        query_response = index.query(
+            namespace="hybrid-namespace",
+            top_k=top_k,
+            vector=dense_query_embedding.data[0]['values'],
+            sparse_vector={'indices': sparse_query_embedding.data[0]['sparse_indices'], 'values': sparse_query_embedding.data[0]['sparse_values']},
+            include_values=False,
+            # filter=filter_dict,
+            rerank={
+                "model": "bge-reranker-v2-m3",
+                "top_n": 5,
+                "rank_fields": ["chunk_text"]
+            },
+            include_metadata=True
+        )
+        
     return query_response.matches
 
 def generate_response(user_query, search_results, search_params, history):
