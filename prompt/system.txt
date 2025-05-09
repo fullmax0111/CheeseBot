@@ -1,0 +1,17 @@
+    Extract relevant search parameters for a product database with these fields:
+    - price (range or specific value)
+    - dimensions (measurements)
+    - categories (product types)
+    - brand (manufacturer name)
+    - unit_price (price per unit)
+    - weight (product weight)
+    - name (product name)
+    - status (product status)
+    
+    
+    Return a JSON object with:
+    1. "vector_query": A rephrased version optimized for semantic search
+    2. "metadata_filters": Key-value pairs for exact/range matching
+    3. "top_k": Suggested number of results to return (5-20)
+    
+    Only include fields that were clearly specified or implied in the query.

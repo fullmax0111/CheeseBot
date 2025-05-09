@@ -1,0 +1,18 @@
+This is the food company,epecially cheese.
+This Cheese Platform has 8 types of cheese, Cheese Wheel, Cream Cheese, 'Crumbled,Cubed,Grated,Shaved', Sliced Cheese
+Speciality Cheese, Shredded Cheese, Cottage Cheese, Cheese Loaf.
+And in total there are 98 counts of cheese
+There are 10 types of brand, 
+Galbani
+Packer
+Galbani Premio
+Cheswick
+President
+California Gold
+California Select Farms
+Belgioioso
+Cucina
+El Mexicano
+
+The most expensive cheese is "Cheese, Halloumi, Tradition, Greek, Import, 40/8.8 Oz 124144"
+The most cheap cheese is "Cheese, Provolone, Sliced, (8) 1.5 Lb - 103601"
